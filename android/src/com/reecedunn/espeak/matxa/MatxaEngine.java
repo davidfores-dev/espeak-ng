@@ -9,17 +9,17 @@ import ai.onnxruntime.OrtSession;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Runs the Matxa ONNX model(s). The "vocoder" file (matxa_multiaccent_wavenext_e2e.onnx) is
  * actually an end-to-end model: it takes the same (x, x_lengths, scales, spks) inputs as the
- * acoustic-only model and outputs the waveform directly ("wav"/"wav_lengths"), matching
- * projecte-aina/tts-api's infer_wavenext_onnx.py has_vocoder_embedded branch. So we just run
- * this single session directly on the phoneme ids; the separate "matcha" acoustic model is not
- * needed for this export and is not used here.
+ * acoustic-only model and outputs the waveform directly, alongside a wav_lengths (int64) output,
+ * matching projecte-aina/tts-api's infer_wavenext_onnx.py has_vocoder_embedded branch. So we just
+ * run this single session directly on the phoneme ids and pick out whichever output is actually
+ * the float waveform (ignoring any int64 length output); the separate "matcha" acoustic model is
+ * not needed for this export and is not used here.
  *
  * speakerId: 6 = Lluc (male, valencia), 7 = Gina (female, valencia).
  */
@@ -81,17 +81,31 @@ public class MatxaEngine {
 
             Breadcrumb.mark("synthesize: about to run vocoderSession.run() directly with " + vocoderInputs.keySet());
             try (OrtSession.Result result = vocoderSession.run(vocoderInputs)) {
-                Breadcrumb.mark("synthesize: vocoderSession.run() returned OK");
-                Iterator<Map.Entry<String, OnnxValue>> it = result.iterator();
-                Object wav = it.next().getValue().getValue();
-                Breadcrumb.mark("synthesize: got wav output, class=" + wav.getClass().getName());
-                return flattenWav(wav);
+                Breadcrumb.mark("synthesize: vocoderSession.run() returned OK, output names = " + result.toString());
+                float[] wav = findWavOutput(result);
+                Breadcrumb.mark("synthesize: got wav output, length=" + wav.length);
+                return wav;
             }
         }
     }
 
-    /** The wav output can come back as [1, 1, N] or [1, N] or [N] depending on export; flatten either. */
-    private float[] flattenWav(Object wav) {
+    /** Scans every output tensor and returns the first one that is actually a float waveform,
+     *  ignoring any int64 "*_lengths" (or similar) outputs the model may also produce. */
+    private float[] findWavOutput(OrtSession.Result result) {
+        StringBuilder seen = new StringBuilder();
+        for (java.util.Map.Entry<String, OnnxValue> entry : result) {
+            Object value = entry.getValue().getValue();
+            seen.append(entry.getKey()).append("=").append(value.getClass().getSimpleName()).append("; ");
+            float[] flat = tryFlattenFloat(value);
+            if (flat != null) {
+                return flat;
+            }
+        }
+        throw new IllegalStateException("No float[] output found among: " + seen);
+    }
+
+    /** Returns a flattened float[] if wav is (nested) float array, otherwise null. */
+    private float[] tryFlattenFloat(Object wav) {
         if (wav instanceof float[]) {
             return (float[]) wav;
         }
@@ -101,7 +115,7 @@ public class MatxaEngine {
         if (wav instanceof float[][][]) {
             return ((float[][][]) wav)[0][0];
         }
-        throw new IllegalStateException("Unexpected vocoder output type: " + wav.getClass());
+        return null;
     }
 
     public void close() {
