@@ -22,7 +22,17 @@ public class Phonemizer {
         boolean ok = this.speech.setVoiceByName("ca-va");
         Breadcrumb.mark("Phonemizer: setVoiceByName(ca-va) returned " + ok);
         if (!ok) {
-            throw new IllegalStateException("espeak no ha trobat la veu \"ca-va\" (valencia) a les dades incloses.");
+            StringBuilder sb = new StringBuilder();
+            sb.append("espeak no ha trobat la veu \"ca-va\" (valencia).\n\nVeus disponibles que contenen \"ca\":\n");
+            boolean any = false;
+            for (String id : this.speech.getRawVoiceIdentifiers()) {
+                if (id.toLowerCase().contains("ca")) {
+                    sb.append(id).append("\n");
+                    any = true;
+                }
+            }
+            if (!any) sb.append("(cap)");
+            throw new IllegalStateException(sb.toString());
         }
     }
 
