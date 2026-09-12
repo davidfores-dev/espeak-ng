@@ -27,6 +27,8 @@ public final class VoiceDataInstaller {
     public static void ensureInstalled(Context context) throws Exception {
         boolean hasBase = CheckVoiceData.hasBaseResources(context);
         boolean upToDate = hasBase && !CheckVoiceData.canUpgradeResources(context);
+        Breadcrumb.mark("VoiceDataInstaller: hasBase=" + hasBase + " upToDate=" + upToDate
+            + " dataPath=" + CheckVoiceData.getDataPath(context).getAbsolutePath());
         if (upToDate) {
             Breadcrumb.mark("VoiceDataInstaller: voice data already installed and up to date");
             return;
@@ -69,7 +71,10 @@ public final class VoiceDataInstaller {
             zipStream.close();
         }
 
-        Breadcrumb.mark("VoiceDataInstaller: extraction finished, hasBaseResources=" + CheckVoiceData.hasBaseResources(context));
+        File extractedDir = CheckVoiceData.getDataPath(context);
+        String[] extractedFiles = extractedDir.list();
+        int fileCount = extractedFiles == null ? -1 : extractedFiles.length;
+        Breadcrumb.mark("VoiceDataInstaller: extraction finished, hasBaseResources=" + CheckVoiceData.hasBaseResources(context)
+            + " fileCountInEspeakNgData=" + fileCount);
     }
 }
-
