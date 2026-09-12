@@ -84,12 +84,27 @@
             android:layout_marginStart="24dp" />
     </RadioGroup>
 
-    <Button
-        android:id="@+id/matxa_play_button"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Reproduir"
-        android:layout_marginBottom="16dp" />
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp">
+
+        <Button
+            android:id="@+id/matxa_play_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Reproduir" />
+
+        <Button
+            android:id="@+id/matxa_save_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="Guardar com a frase" />
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/matxa_progress"
