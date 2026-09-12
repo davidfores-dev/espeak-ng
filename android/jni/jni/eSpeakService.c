@@ -104,6 +104,15 @@ static JNIEnv *getJniEnv() {
   return env;
 }
 
+/* Used only while calling espeak_TextToPhonemes(), which does not pass a valid
+ * jobject as events->user_data the way espeak_Synth() does. If espeak internally
+ * touches the synth callback during phoneme translation, this just no-ops instead
+ * of calling back into JNI with garbage/NULL user_data (which would crash). */
+static int NoOpSynthCallback(short *audioData, int numSamples,
+                              espeak_EVENT *events) {
+  return SYNTH_CONTINUE;
+}
+
 /* Callback from espeak.  Should call back to the TTS API */
 static int SynthCallback(short *audioData, int numSamples,
                          espeak_EVENT *events) {
@@ -344,6 +353,12 @@ JNICALL Java_com_reecedunn_espeak_SpeechSynthesis_nativeTextToPhonemesIPA(
   if (DEBUG) LOGV("%s", __FUNCTION__);
   const char *c_text = text ? (*env)->GetStringUTFChars(env, text, NULL) : NULL;
   if (!c_text) return (*env)->NewStringUTF(env, "");
+
+  /* espeak-ng's internal clause/phoneme pipeline expects a synth callback to be
+   * registered (it is normally set just before espeak_Synth()); without it, some
+   * code paths reached from espeak_TextToPhonemes() can crash natively. Use the
+   * no-op variant here since there is no valid jobject to call back into. */
+  espeak_SetSynthCallback(NoOpSynthCallback);
 
   char result[8192];
   result[0] = 0;
