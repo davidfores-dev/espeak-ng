@@ -8,18 +8,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Android NDK
-        id: setup-ndk
-        uses: nttld/setup-ndk@v1
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          ndk-version: r26c
+          distribution: temurin
+          java-version: '17'
 
-      - name: ndk-build
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK 26.1.10909125
+        run: sdkmanager --install "ndk;26.1.10909125"
+
+      - name: Build native libraries with Gradle/CMake
         working-directory: android
-        run: ${{ steps.setup-ndk.outputs.ndk-path }}/ndk-build
+        run: |
+          chmod +x gradlew
+          ./gradlew externalNativeBuildDebug --stacktrace
 
       - name: Upload .so files
         uses: actions/upload-artifact@v4
         with:
           name: espeak-ng-libs
-          path: android/libs
+          path: android/**/*.so
