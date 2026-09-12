@@ -32,17 +32,26 @@ public class MatxaActivity extends Activity {
     private MatxaEngine engine;
     private Phonemizer phonemizer;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private String crashPrefix = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_matxa);
 
+        Breadcrumb.init(getApplicationContext());
+
         textInput = findViewById(R.id.matxa_text_input);
         speakerGroup = findViewById(R.id.matxa_speaker_group);
         playButton = findViewById(R.id.matxa_play_button);
         progressBar = findViewById(R.id.matxa_progress);
         statusText = findViewById(R.id.matxa_status);
+
+        String lastStep = Breadcrumb.readLast();
+        if (lastStep != null) {
+            crashPrefix = "LA VEGADA ANTERIOR ES VA TANCAR JUST DESPRES DE:\n" + lastStep + "\n\n---\n\n";
+            statusText.setText(crashPrefix);
+        }
 
         playButton.setEnabled(false);
         prepareEverything();
@@ -64,6 +73,7 @@ public class MatxaActivity extends Activity {
             @Override
             public void run() {
                 try {
+                    Breadcrumb.mark("prepareEverything: creating SpeechSynthesis (espeak init)");
                     SpeechSynthesis speech = new SpeechSynthesis(MatxaActivity.this, new SpeechSynthesis.SynthReadyCallback() {
                         @Override
                         public void onSynthDataReady(byte[] audioData) {}
@@ -71,13 +81,16 @@ public class MatxaActivity extends Activity {
                         @Override
                         public void onSynthDataComplete() {}
                     });
+                    Breadcrumb.mark("prepareEverything: SpeechSynthesis created OK, creating Phonemizer");
                     phonemizer = new Phonemizer(speech);
+                    Breadcrumb.mark("prepareEverything: Phonemizer created OK");
 
                     File modelDir = getExternalFilesDir(null);
                     if (modelDir == null) modelDir = getFilesDir();
                     final File dir = modelDir;
 
                     if (!ModelDownloader.areModelsReady(dir)) {
+                        Breadcrumb.mark("prepareEverything: models not ready, downloading");
                         setStatus(getString(R.string.matxa_status_downloading));
                         ModelDownloader.downloadModels(dir, new ModelDownloader.ProgressListener() {
                             @Override
@@ -87,12 +100,17 @@ public class MatxaActivity extends Activity {
                                 setStatus(getString(R.string.matxa_status_downloading) + " (" + label + " " + pct + "%)");
                             }
                         });
+                        Breadcrumb.mark("prepareEverything: download finished OK");
+                    } else {
+                        Breadcrumb.mark("prepareEverything: models already on disk");
                     }
 
+                    Breadcrumb.mark("prepareEverything: creating MatxaEngine (loading ONNX sessions)");
                     engine = new MatxaEngine(
                         ModelDownloader.matchaFile(dir).getAbsolutePath(),
                         ModelDownloader.vocoderFile(dir).getAbsolutePath()
                     );
+                    Breadcrumb.mark("prepareEverything: MatxaEngine created OK, everything ready");
 
                     setStatus(getString(R.string.matxa_status_ready));
                     mainHandler.post(new Runnable() {
@@ -117,9 +135,13 @@ public class MatxaActivity extends Activity {
             public void run() {
                 try {
                     if (phonemizer == null || engine == null) return;
+                    Breadcrumb.mark("speak: calling phonemizeToIds");
                     int[] ids = phonemizer.phonemizeToIds(text);
+                    Breadcrumb.mark("speak: calling engine.synthesize, ids.length=" + ids.length);
                     final float[] audio = engine.synthesize(ids, speakerId);
+                    Breadcrumb.mark("speak: synthesize returned, audio.length=" + audio.length + ", calling playAudio");
                     playAudio(audio, engine.sampleRate);
+                    Breadcrumb.mark("speak: playAudio returned OK");
                 } catch (final Throwable t) {
                     Log.e("MatxaActivity", "speak failed", t);
                     final String trace = Log.getStackTraceString(t);
@@ -167,7 +189,7 @@ public class MatxaActivity extends Activity {
         mainHandler.post(new Runnable() {
             @Override
             public void run() {
-                statusText.setText(text);
+                statusText.setText(crashPrefix + text);
             }
         });
     }
