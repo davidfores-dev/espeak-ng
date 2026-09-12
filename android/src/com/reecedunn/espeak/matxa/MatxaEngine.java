@@ -28,9 +28,13 @@ public class MatxaEngine {
     private final OrtSession vocoderSession;
 
     public MatxaEngine(String matchaModelPath, String vocoderModelPath) throws OrtException {
+        Breadcrumb.mark("MatxaEngine: getting OrtEnvironment");
         env = OrtEnvironment.getEnvironment();
+        Breadcrumb.mark("MatxaEngine: creating matcha session");
         matchaSession = env.createSession(matchaModelPath, new OrtSession.SessionOptions());
+        Breadcrumb.mark("MatxaEngine: creating vocoder session");
         vocoderSession = env.createSession(vocoderModelPath, new OrtSession.SessionOptions());
+        Breadcrumb.mark("MatxaEngine: both sessions created OK");
     }
 
     public float[] synthesize(int[] ids, int speakerId) throws OrtException {
@@ -38,6 +42,7 @@ public class MatxaEngine {
     }
 
     public float[] synthesize(int[] ids, int speakerId, float temperature, float speakingRate) throws OrtException {
+        Breadcrumb.mark("synthesize: start, ids.length=" + ids.length);
         long[] idsLong = new long[ids.length];
         for (int i = 0; i < ids.length; i++) idsLong[i] = ids[i];
 
@@ -50,24 +55,33 @@ public class MatxaEngine {
              OnnxTensor spksTensor = OnnxTensor.createTensor(
                 env, LongBuffer.wrap(new long[]{speakerId}), new long[]{1})) {
 
+            Breadcrumb.mark("synthesize: input tensors created OK");
+
             Map<String, OnnxTensor> matchaInputs = new HashMap<>();
             matchaInputs.put("x", xTensor);
             matchaInputs.put("x_lengths", xLengthsTensor);
             matchaInputs.put("scales", scalesTensor);
             matchaInputs.put("spks", spksTensor);
 
+            Breadcrumb.mark("synthesize: about to run matchaSession.run()");
             try (OrtSession.Result matchaResult = matchaSession.run(matchaInputs)) {
+                Breadcrumb.mark("synthesize: matchaSession.run() returned OK");
                 Iterator<Map.Entry<String, OnnxValue>> matchaIt = matchaResult.iterator();
                 Object mel = matchaIt.next().getValue().getValue();
+                Breadcrumb.mark("synthesize: got mel output, class=" + mel.getClass().getName());
 
                 String vocoderInputName = vocoderSession.getInputNames().iterator().next();
+                Breadcrumb.mark("synthesize: vocoder input name = " + vocoderInputName);
                 try (OnnxTensor melTensor = OnnxTensor.createTensor(env, mel)) {
+                    Breadcrumb.mark("synthesize: melTensor created OK, about to run vocoderSession.run()");
                     Map<String, OnnxTensor> vocoderInputs = new HashMap<>();
                     vocoderInputs.put(vocoderInputName, melTensor);
 
                     try (OrtSession.Result vocoderResult = vocoderSession.run(vocoderInputs)) {
+                        Breadcrumb.mark("synthesize: vocoderSession.run() returned OK");
                         Iterator<Map.Entry<String, OnnxValue>> vocoderIt = vocoderResult.iterator();
                         Object wav = vocoderIt.next().getValue().getValue();
+                        Breadcrumb.mark("synthesize: got wav output, class=" + wav.getClass().getName());
                         return flattenWav(wav);
                     }
                 }
@@ -97,4 +111,3 @@ public class MatxaEngine {
         }
     }
 }
-
