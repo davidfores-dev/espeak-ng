@@ -17,6 +17,8 @@ import android.widget.Toast;
 import com.reecedunn.espeak.R;
 import com.reecedunn.espeak.SpeechSynthesis;
 
+import android.util.Log;
+
 import java.io.File;
 
 public class MatxaActivity extends Activity {
@@ -100,8 +102,9 @@ public class MatxaActivity extends Activity {
                             playButton.setEnabled(true);
                         }
                     });
-                } catch (final Exception e) {
-                    setStatus("Error: " + e.getMessage());
+                } catch (final Throwable t) {
+                    Log.e("MatxaActivity", "prepareEverything failed", t);
+                    setStatus("ERROR PREPARANT:\n" + Log.getStackTraceString(t));
                 }
             }
         }).start();
@@ -117,11 +120,13 @@ public class MatxaActivity extends Activity {
                     int[] ids = phonemizer.phonemizeToIds(text);
                     final float[] audio = engine.synthesize(ids, speakerId);
                     playAudio(audio, engine.sampleRate);
-                } catch (final Exception e) {
+                } catch (final Throwable t) {
+                    Log.e("MatxaActivity", "speak failed", t);
+                    final String trace = Log.getStackTraceString(t);
                     mainHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(MatxaActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            statusText.setText("ERROR REPRODUINT:\n" + trace);
                         }
                     });
                 } finally {
@@ -173,4 +178,3 @@ public class MatxaActivity extends Activity {
         if (engine != null) engine.close();
     }
 }
-
