@@ -94,4 +94,7 @@
   <string name="variant_whisper">Whisper</string>
   <string name="import_voice_title">Import eSpeak dictionary</string>
   <string name="import_voice_description">Import an eSpeak voice dictionary file from the SD card.</string>
+  <string name="matxa_status_preparing">Preparant el motor de veu...</string>
+  <string name="matxa_status_downloading">Descarregant els models de Matxa (nomes cal la primera vegada)</string>
+  <string name="matxa_status_ready">Llest</string>
 </resources>
