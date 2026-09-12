@@ -18,13 +18,18 @@ public class Phonemizer {
 
     public Phonemizer(SpeechSynthesis speech) {
         this.speech = speech;
+        Breadcrumb.mark("Phonemizer: about to setVoiceByName(ca-va)");
         this.speech.setVoiceByName("ca-va");
+        Breadcrumb.mark("Phonemizer: setVoiceByName(ca-va) returned OK");
     }
 
     /** Returns the interspersed id sequence ready to feed into the "x" input of the Matcha ONNX model. */
     public int[] phonemizeToIds(String text) {
+        Breadcrumb.mark("phonemizeToIds: start for text=\"" + text + "\"");
         String ipa = phonemize(text);
+        Breadcrumb.mark("phonemizeToIds: got ipa=\"" + ipa + "\"");
         int[] ids = PhonemeSymbols.textToSequence(ipa);
+        Breadcrumb.mark("phonemizeToIds: got ids.length=" + ids.length);
         return PhonemeSymbols.intersperse(ids);
     }
 
@@ -38,7 +43,10 @@ public class Phonemizer {
             if (token.isPunctuation) {
                 sb.append(token.text);
             } else {
-                sb.append(speech.textToPhonemesIPA(token.text).trim());
+                Breadcrumb.mark("phonemize: about to call textToPhonemesIPA(\"" + token.text + "\")");
+                String ph = speech.textToPhonemesIPA(token.text);
+                Breadcrumb.mark("phonemize: textToPhonemesIPA returned \"" + ph + "\"");
+                sb.append(ph.trim());
             }
         }
         return sb.toString().replaceAll("\\s+", " ").trim();
@@ -84,4 +92,3 @@ public class Phonemizer {
         return tokens;
     }
 }
-
