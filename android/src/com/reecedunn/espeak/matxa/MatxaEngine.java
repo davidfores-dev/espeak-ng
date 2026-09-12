@@ -66,17 +66,37 @@ public class MatxaEngine {
             Breadcrumb.mark("synthesize: about to run matchaSession.run()");
             try (OrtSession.Result matchaResult = matchaSession.run(matchaInputs)) {
                 Breadcrumb.mark("synthesize: matchaSession.run() returned OK");
-                Iterator<Map.Entry<String, OnnxValue>> matchaIt = matchaResult.iterator();
-                Object mel = matchaIt.next().getValue().getValue();
+                Iterator<Map.Entry<String, OnnxValue>> matchaOutIt = matchaResult.iterator();
+                Object mel = matchaOutIt.next().getValue().getValue();
                 Breadcrumb.mark("synthesize: got mel output, class=" + mel.getClass().getName());
 
-                String vocoderInputName = vocoderSession.getInputNames().iterator().next();
-                Breadcrumb.mark("synthesize: vocoder input name = " + vocoderInputName);
-                try (OnnxTensor melTensor = OnnxTensor.createTensor(env, mel)) {
-                    Breadcrumb.mark("synthesize: melTensor created OK, about to run vocoderSession.run()");
-                    Map<String, OnnxTensor> vocoderInputs = new HashMap<>();
-                    vocoderInputs.put(vocoderInputName, melTensor);
+                java.util.Set<String> vocoderInputNames = vocoderSession.getInputNames();
+                Breadcrumb.mark("synthesize: vocoder input names = " + vocoderInputNames);
 
+                // Figure out the time (frame) length of the mel output, in case the vocoder
+                // also wants a "*_lengths" input (mirrors what the matcha model itself needs).
+                long melLength = 0;
+                if (mel instanceof float[][][]) {
+                    melLength = ((float[][][]) mel)[0][0].length;
+                }
+
+                Map<String, OnnxTensor> vocoderInputs = new HashMap<>();
+                java.util.List<OnnxTensor> toClose = new java.util.ArrayList<>();
+                try {
+                    for (String name : vocoderInputNames) {
+                        String lower = name.toLowerCase();
+                        if (lower.contains("length")) {
+                            OnnxTensor t = OnnxTensor.createTensor(env, LongBuffer.wrap(new long[]{melLength}), new long[]{1});
+                            toClose.add(t);
+                            vocoderInputs.put(name, t);
+                        } else {
+                            OnnxTensor t = OnnxTensor.createTensor(env, mel);
+                            toClose.add(t);
+                            vocoderInputs.put(name, t);
+                        }
+                    }
+
+                    Breadcrumb.mark("synthesize: vocoder inputs built OK, about to run vocoderSession.run()");
                     try (OrtSession.Result vocoderResult = vocoderSession.run(vocoderInputs)) {
                         Breadcrumb.mark("synthesize: vocoderSession.run() returned OK");
                         Iterator<Map.Entry<String, OnnxValue>> vocoderIt = vocoderResult.iterator();
@@ -84,6 +104,8 @@ public class MatxaEngine {
                         Breadcrumb.mark("synthesize: got wav output, class=" + wav.getClass().getName());
                         return flattenWav(wav);
                     }
+                } finally {
+                    for (OnnxTensor t : toClose) t.close();
                 }
             }
         }
