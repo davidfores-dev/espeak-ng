@@ -73,6 +73,8 @@ public class MatxaActivity extends Activity {
             @Override
             public void run() {
                 try {
+                    Breadcrumb.mark("prepareEverything: ensuring voice data is extracted");
+                    VoiceDataInstaller.ensureInstalled(MatxaActivity.this);
                     Breadcrumb.mark("prepareEverything: creating SpeechSynthesis (espeak init)");
                     SpeechSynthesis speech = new SpeechSynthesis(MatxaActivity.this, new SpeechSynthesis.SynthReadyCallback() {
                         @Override
