@@ -24,7 +24,10 @@ public class Phonemizer {
         if (!ok) {
             java.util.List<String> all = this.speech.getRawVoiceIdentifiers();
             StringBuilder sb = new StringBuilder();
-            sb.append("espeak no ha trobat la veu \"ca-va\".\n\nTotal de veus carregades: ").append(all.size()).append("\n\n");
+            sb.append("espeak no ha trobat la veu \"ca-va\".\n\n");
+            sb.append("speech.isInitialized() = ").append(this.speech.isInitialized()).append("\n");
+            sb.append("speech.getSampleRate() = ").append(this.speech.getSampleRate()).append("\n\n");
+            sb.append("Total de veus carregades: ").append(all.size()).append("\n\n");
             sb.append("Primeres veus (qualsevol idioma):\n");
             int shown = 0;
             for (String id : all) {
