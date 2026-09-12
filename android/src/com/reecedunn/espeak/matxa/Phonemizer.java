@@ -19,8 +19,11 @@ public class Phonemizer {
     public Phonemizer(SpeechSynthesis speech) {
         this.speech = speech;
         Breadcrumb.mark("Phonemizer: about to setVoiceByName(ca-va)");
-        this.speech.setVoiceByName("ca-va");
-        Breadcrumb.mark("Phonemizer: setVoiceByName(ca-va) returned OK");
+        boolean ok = this.speech.setVoiceByName("ca-va");
+        Breadcrumb.mark("Phonemizer: setVoiceByName(ca-va) returned " + ok);
+        if (!ok) {
+            throw new IllegalStateException("espeak no ha trobat la veu \"ca-va\" (valencia) a les dades incloses.");
+        }
     }
 
     /** Returns the interspersed id sequence ready to feed into the "x" input of the Matcha ONNX model. */
