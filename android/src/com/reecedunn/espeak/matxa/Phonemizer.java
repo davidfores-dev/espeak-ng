@@ -22,16 +22,16 @@ public class Phonemizer {
         boolean ok = this.speech.setVoiceByName("ca-va");
         Breadcrumb.mark("Phonemizer: setVoiceByName(ca-va) returned " + ok);
         if (!ok) {
+            java.util.List<String> all = this.speech.getRawVoiceIdentifiers();
             StringBuilder sb = new StringBuilder();
-            sb.append("espeak no ha trobat la veu \"ca-va\" (valencia).\n\nVeus disponibles que contenen \"ca\":\n");
-            boolean any = false;
-            for (String id : this.speech.getRawVoiceIdentifiers()) {
-                if (id.toLowerCase().contains("ca")) {
-                    sb.append(id).append("\n");
-                    any = true;
-                }
+            sb.append("espeak no ha trobat la veu \"ca-va\".\n\nTotal de veus carregades: ").append(all.size()).append("\n\n");
+            sb.append("Primeres veus (qualsevol idioma):\n");
+            int shown = 0;
+            for (String id : all) {
+                if (shown >= 20) break;
+                sb.append(id).append("\n");
+                shown++;
             }
-            if (!any) sb.append("(cap)");
             throw new IllegalStateException(sb.toString());
         }
     }
