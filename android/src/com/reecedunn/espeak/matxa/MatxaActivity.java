@@ -1,6 +1,7 @@
 package com.reecedunn.espeak.matxa;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioTrack;
@@ -9,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.GridLayout;
 import android.widget.ProgressBar;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -20,6 +22,8 @@ import com.reecedunn.espeak.SpeechSynthesis;
 import android.util.Log;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MatxaActivity extends Activity {
 
@@ -28,6 +32,9 @@ public class MatxaActivity extends Activity {
     private Button playButton;
     private ProgressBar progressBar;
     private TextView statusText;
+    private GridLayout quickPhrasesGrid;
+    private Button addPhraseButton;
+    private final List<QuickPhrase> quickPhrases = new ArrayList<>();
 
     private MatxaEngine engine;
     private Phonemizer phonemizer;
@@ -46,12 +53,24 @@ public class MatxaActivity extends Activity {
         playButton = findViewById(R.id.matxa_play_button);
         progressBar = findViewById(R.id.matxa_progress);
         statusText = findViewById(R.id.matxa_status);
+        quickPhrasesGrid = findViewById(R.id.matxa_quick_phrases_grid);
+        addPhraseButton = findViewById(R.id.matxa_add_phrase_button);
 
         String lastStep = Breadcrumb.readLast();
         if (lastStep != null) {
             crashPrefix = "LA VEGADA ANTERIOR ES VA TANCAR JUST DESPRES DE:\n" + lastStep + "\n\n---\n\n";
             statusText.setText(crashPrefix);
         }
+
+        quickPhrases.addAll(QuickPhrasesStore.load(this));
+        renderQuickPhrases();
+
+        addPhraseButton.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                showAddPhraseDialog();
+            }
+        });
 
         playButton.setEnabled(false);
         prepareEverything();
@@ -65,6 +84,81 @@ public class MatxaActivity extends Activity {
                 speak(text, speakerId);
             }
         });
+    }
+
+    private int currentSpeakerId() {
+        return speakerGroup.getCheckedRadioButtonId() == R.id.matxa_speaker_gina ? 7 : 6;
+    }
+
+    private void renderQuickPhrases() {
+        quickPhrasesGrid.removeAllViews();
+        for (final QuickPhrase phrase : quickPhrases) {
+            Button b = new Button(this);
+            b.setText(phrase.label);
+            b.setAllCaps(false);
+            b.setSingleLine(false);
+            b.setMaxLines(2);
+
+            GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+            lp.width = 0;
+            lp.height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+            lp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+            lp.setMargins(6, 6, 6, 6);
+            b.setLayoutParams(lp);
+
+            b.setOnClickListener(new android.view.View.OnClickListener() {
+                @Override
+                public void onClick(android.view.View v) {
+                    speak(phrase.text, currentSpeakerId());
+                }
+            });
+            b.setOnLongClickListener(new android.view.View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(android.view.View v) {
+                    confirmDeletePhrase(phrase);
+                    return true;
+                }
+            });
+
+            quickPhrasesGrid.addView(b);
+        }
+    }
+
+    private void showAddPhraseDialog() {
+        final EditText input = new EditText(this);
+        input.setHint("Ex: Vull aigua");
+
+        new AlertDialog.Builder(this)
+            .setTitle("Nova frase rapida")
+            .setView(input)
+            .setPositiveButton("Afegir", new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface dialog, int which) {
+                    String text = input.getText().toString().trim();
+                    if (text.isEmpty()) return;
+                    quickPhrases.add(new QuickPhrase(text, text));
+                    QuickPhrasesStore.save(MatxaActivity.this, quickPhrases);
+                    renderQuickPhrases();
+                }
+            })
+            .setNegativeButton("Cancelar", null)
+            .show();
+    }
+
+    private void confirmDeletePhrase(final QuickPhrase phrase) {
+        new AlertDialog.Builder(this)
+            .setTitle("Eliminar frase?")
+            .setMessage(phrase.label)
+            .setPositiveButton("Eliminar", new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface dialog, int which) {
+                    quickPhrases.remove(phrase);
+                    QuickPhrasesStore.save(MatxaActivity.this, quickPhrases);
+                    renderQuickPhrases();
+                }
+            })
+            .setNegativeButton("Cancelar", null)
+            .show();
     }
 
     private void prepareEverything() {
