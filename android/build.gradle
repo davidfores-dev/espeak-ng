@@ -38,7 +38,7 @@ android {
 
     defaultConfig {
         minSdk 24
-        targetSdk 33
+        targetSdk 34
         versionCode 22
         versionName "1.52-dev"
 
