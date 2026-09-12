@@ -34,6 +34,7 @@ public class MatxaActivity extends Activity {
     private TextView statusText;
     private GridLayout quickPhrasesGrid;
     private Button addPhraseButton;
+    private Button saveCurrentButton;
     private final List<QuickPhrase> quickPhrases = new ArrayList<>();
 
     private MatxaEngine engine;
@@ -55,6 +56,7 @@ public class MatxaActivity extends Activity {
         statusText = findViewById(R.id.matxa_status);
         quickPhrasesGrid = findViewById(R.id.matxa_quick_phrases_grid);
         addPhraseButton = findViewById(R.id.matxa_add_phrase_button);
+        saveCurrentButton = findViewById(R.id.matxa_save_button);
 
         String lastStep = Breadcrumb.readLast();
         if (lastStep != null) {
@@ -69,6 +71,18 @@ public class MatxaActivity extends Activity {
             @Override
             public void onClick(android.view.View v) {
                 showAddPhraseDialog();
+            }
+        });
+
+        saveCurrentButton.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                String text = textInput.getText().toString().trim();
+                if (text.isEmpty()) return;
+                quickPhrases.add(new QuickPhrase(text, text));
+                QuickPhrasesStore.save(MatxaActivity.this, quickPhrases);
+                renderQuickPhrases();
+                Toast.makeText(MatxaActivity.this, "Guardat com a frase rapida", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -115,7 +129,7 @@ public class MatxaActivity extends Activity {
             b.setOnLongClickListener(new android.view.View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(android.view.View v) {
-                    confirmDeletePhrase(phrase);
+                    showEditPhraseDialog(phrase);
                     return true;
                 }
             });
@@ -145,11 +159,26 @@ public class MatxaActivity extends Activity {
             .show();
     }
 
-    private void confirmDeletePhrase(final QuickPhrase phrase) {
+    private void showEditPhraseDialog(final QuickPhrase phrase) {
+        final EditText input = new EditText(this);
+        input.setText(phrase.text);
+        input.setSelection(input.getText().length());
+
         new AlertDialog.Builder(this)
-            .setTitle("Eliminar frase?")
-            .setMessage(phrase.label)
-            .setPositiveButton("Eliminar", new android.content.DialogInterface.OnClickListener() {
+            .setTitle("Editar frase")
+            .setView(input)
+            .setPositiveButton("Guardar", new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface dialog, int which) {
+                    String text = input.getText().toString().trim();
+                    if (text.isEmpty()) return;
+                    phrase.label = text;
+                    phrase.text = text;
+                    QuickPhrasesStore.save(MatxaActivity.this, quickPhrases);
+                    renderQuickPhrases();
+                }
+            })
+            .setNeutralButton("Eliminar", new android.content.DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(android.content.DialogInterface dialog, int which) {
                     quickPhrases.remove(phrase);
