@@ -338,6 +338,27 @@ JNICALL Java_com_reecedunn_espeak_SpeechSynthesis_nativeStop(
   return JNI_TRUE;
 }
 
+JNIEXPORT jstring
+JNICALL Java_com_reecedunn_espeak_SpeechSynthesis_nativeTextToPhonemesIPA(
+    JNIEnv *env, jobject object, jstring text) {
+  if (DEBUG) LOGV("%s", __FUNCTION__);
+  const char *c_text = text ? (*env)->GetStringUTFChars(env, text, NULL) : NULL;
+  if (!c_text) return (*env)->NewStringUTF(env, "");
+
+  char result[8192];
+  result[0] = 0;
+  const char *p = c_text;
+  while (p != NULL && *p != 0) {
+    const char *ph = espeak_TextToPhonemes((const void **)&p, espeakCHARS_UTF8, 2 /* IPA */);
+    if (ph == NULL) break;
+    if (result[0] != 0 && strlen(result) + 1 < sizeof(result)) strcat(result, " ");
+    if (strlen(result) + strlen(ph) < sizeof(result)) strcat(result, ph);
+  }
+
+  (*env)->ReleaseStringUTFChars(env, text, c_text);
+  return (*env)->NewStringUTF(env, result);
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
