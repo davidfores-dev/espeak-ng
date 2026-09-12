@@ -9,13 +9,17 @@ import ai.onnxruntime.OrtSession;
 import java.nio.FloatBuffer;
 import java.nio.LongBuffer;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Runs the two Matxa ONNX models: the acoustic model (text ids -> mel spectrogram) and the
- * WaveNeXt vocoder (mel spectrogram -> waveform). Mirrors projecte-aina/tts-api's
- * infer_wavenext_onnx.py.
+ * Runs the Matxa ONNX model(s). The "vocoder" file (matxa_multiaccent_wavenext_e2e.onnx) is
+ * actually an end-to-end model: it takes the same (x, x_lengths, scales, spks) inputs as the
+ * acoustic-only model and outputs the waveform directly ("wav"/"wav_lengths"), matching
+ * projecte-aina/tts-api's infer_wavenext_onnx.py has_vocoder_embedded branch. So we just run
+ * this single session directly on the phoneme ids; the separate "matcha" acoustic model is not
+ * needed for this export and is not used here.
  *
  * speakerId: 6 = Lluc (male, valencia), 7 = Gina (female, valencia).
  */
@@ -34,7 +38,8 @@ public class MatxaEngine {
         matchaSession = env.createSession(matchaModelPath, new OrtSession.SessionOptions());
         Breadcrumb.mark("MatxaEngine: creating vocoder session");
         vocoderSession = env.createSession(vocoderModelPath, new OrtSession.SessionOptions());
-        Breadcrumb.mark("MatxaEngine: both sessions created OK");
+        Breadcrumb.mark("MatxaEngine: both sessions created OK, vocoder inputs=" + vocoderSession.getInputNames()
+            + " vocoder outputs=" + vocoderSession.getOutputNames());
     }
 
     public float[] synthesize(int[] ids, int speakerId) throws OrtException {
@@ -57,61 +62,35 @@ public class MatxaEngine {
 
             Breadcrumb.mark("synthesize: input tensors created OK");
 
-            Map<String, OnnxTensor> matchaInputs = new HashMap<>();
-            matchaInputs.put("x", xTensor);
-            matchaInputs.put("x_lengths", xLengthsTensor);
-            matchaInputs.put("scales", scalesTensor);
-            matchaInputs.put("spks", spksTensor);
+            Map<String, OnnxTensor> allCandidates = new HashMap<>();
+            allCandidates.put("x", xTensor);
+            allCandidates.put("x_lengths", xLengthsTensor);
+            allCandidates.put("scales", scalesTensor);
+            allCandidates.put("spks", spksTensor);
 
-            Breadcrumb.mark("synthesize: about to run matchaSession.run()");
-            try (OrtSession.Result matchaResult = matchaSession.run(matchaInputs)) {
-                Breadcrumb.mark("synthesize: matchaSession.run() returned OK");
-                Iterator<Map.Entry<String, OnnxValue>> matchaOutIt = matchaResult.iterator();
-                Object mel = matchaOutIt.next().getValue().getValue();
-                Breadcrumb.mark("synthesize: got mel output, class=" + mel.getClass().getName());
+            Set<String> vocoderInputNames = vocoderSession.getInputNames();
+            Breadcrumb.mark("synthesize: vocoder input names = " + vocoderInputNames);
 
-                java.util.Set<String> vocoderInputNames = vocoderSession.getInputNames();
-                Breadcrumb.mark("synthesize: vocoder input names = " + vocoderInputNames);
-
-                // Figure out the time (frame) length of the mel output, in case the vocoder
-                // also wants a "*_lengths" input (mirrors what the matcha model itself needs).
-                long melLength = 0;
-                if (mel instanceof float[][][]) {
-                    melLength = ((float[][][]) mel)[0][0].length;
+            Map<String, OnnxTensor> vocoderInputs = new HashMap<>();
+            for (String name : vocoderInputNames) {
+                OnnxTensor t = allCandidates.get(name);
+                if (t != null) {
+                    vocoderInputs.put(name, t);
                 }
+            }
 
-                Map<String, OnnxTensor> vocoderInputs = new HashMap<>();
-                java.util.List<OnnxTensor> toClose = new java.util.ArrayList<>();
-                try {
-                    for (String name : vocoderInputNames) {
-                        String lower = name.toLowerCase();
-                        if (lower.contains("length")) {
-                            OnnxTensor t = OnnxTensor.createTensor(env, LongBuffer.wrap(new long[]{melLength}), new long[]{1});
-                            toClose.add(t);
-                            vocoderInputs.put(name, t);
-                        } else {
-                            OnnxTensor t = OnnxTensor.createTensor(env, mel);
-                            toClose.add(t);
-                            vocoderInputs.put(name, t);
-                        }
-                    }
-
-                    Breadcrumb.mark("synthesize: vocoder inputs built OK, about to run vocoderSession.run()");
-                    try (OrtSession.Result vocoderResult = vocoderSession.run(vocoderInputs)) {
-                        Breadcrumb.mark("synthesize: vocoderSession.run() returned OK");
-                        Iterator<Map.Entry<String, OnnxValue>> vocoderIt = vocoderResult.iterator();
-                        Object wav = vocoderIt.next().getValue().getValue();
-                        Breadcrumb.mark("synthesize: got wav output, class=" + wav.getClass().getName());
-                        return flattenWav(wav);
-                    }
-                } finally {
-                    for (OnnxTensor t : toClose) t.close();
-                }
+            Breadcrumb.mark("synthesize: about to run vocoderSession.run() directly with " + vocoderInputs.keySet());
+            try (OrtSession.Result result = vocoderSession.run(vocoderInputs)) {
+                Breadcrumb.mark("synthesize: vocoderSession.run() returned OK");
+                Iterator<Map.Entry<String, OnnxValue>> it = result.iterator();
+                Object wav = it.next().getValue().getValue();
+                Breadcrumb.mark("synthesize: got wav output, class=" + wav.getClass().getName());
+                return flattenWav(wav);
             }
         }
     }
 
-    /** The vocoder output can come back as [1, 1, N] or [1, N] depending on export; flatten either. */
+    /** The wav output can come back as [1, 1, N] or [1, N] or [N] depending on export; flatten either. */
     private float[] flattenWav(Object wav) {
         if (wav instanceof float[]) {
             return (float[]) wav;
