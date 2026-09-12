@@ -94,6 +94,11 @@ public class SpeechSynthesis {
         return mSampleRate;
     }
 
+    /** True once espeak_Initialize succeeded (i.e. voice data was found and loaded). */
+    public boolean isInitialized() {
+        return mInitialized;
+    }
+
     public int getChannelCount() {
         return CHANNEL_COUNT_MONO;
     }
