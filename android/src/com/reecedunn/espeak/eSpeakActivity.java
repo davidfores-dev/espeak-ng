@@ -117,7 +117,11 @@ public class eSpeakActivity extends Activity {
         super.onStart();
 
         final IntentFilter filter = new IntentFilter(TtsService.ESPEAK_INITIALIZED);
-        registerReceiver(mOnEspeakInitialized, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mOnEspeakInitialized, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mOnEspeakInitialized, filter);
+        }
     }
 
     @Override
