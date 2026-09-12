@@ -121,6 +121,18 @@ public class SpeechSynthesis {
         }
     }
 
+    /** Raw (name, identifier) pairs exactly as espeak-ng reports them, with no Java-side Locale
+     *  filtering, so voices whose language code isn't a valid java.util.Locale (e.g. "ca-va")
+     *  still show up. Useful for diagnosing voice lookup failures. */
+    public List<String> getRawVoiceIdentifiers() {
+        final List<String> ids = new LinkedList<String>();
+        final String[] results = nativeGetAvailableVoices();
+        for (int i = 0; i < results.length; i += 4) {
+            ids.add(results[i] + " => " + results[i + 1]);
+        }
+        return ids;
+    }
+
     public List<Voice> getAvailableVoices() {
         final List<Voice> voices = new LinkedList<Voice>();
         final String[] results = nativeGetAvailableVoices();
