@@ -91,7 +91,7 @@ public class MatxaEngine {
 
     /** Scans every output tensor and returns the first one that is actually a float waveform,
      *  ignoring any int64 "*_lengths" (or similar) outputs the model may also produce. */
-    private float[] findWavOutput(OrtSession.Result result) {
+    private float[] findWavOutput(OrtSession.Result result) throws OrtException {
         StringBuilder seen = new StringBuilder();
         for (java.util.Map.Entry<String, OnnxValue> entry : result) {
             Object value = entry.getValue().getValue();
