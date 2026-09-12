@@ -133,7 +133,11 @@ public class TtsService extends TextToSpeechService {
                 };
 
                 final IntentFilter filter = new IntentFilter(DownloadVoiceData.BROADCAST_LANGUAGES_UPDATED);
-                registerReceiver(mOnLanguagesDownloaded, filter);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    registerReceiver(mOnLanguagesDownloaded, filter, Context.RECEIVER_NOT_EXPORTED);
+                } else {
+                    registerReceiver(mOnLanguagesDownloaded, filter);
+                }
             }
 
             final Intent intent = new Intent(storageContext, DownloadVoiceData.class);
