@@ -178,6 +178,11 @@ public class SpeechSynthesis {
         }
     }
 
+    /** Selects a voice directly by its espeak-ng identifier (e.g. "ca-va" for Valencian). */
+    public boolean setVoiceByName(String name) {
+        return nativeSetVoiceByName(name);
+    }
+
     public void setPunctuationCharacters(String characters) {
         nativeSetPunctuationCharacters(characters);
     }
@@ -259,6 +264,11 @@ public class SpeechSynthesis {
         nativeSynthesize(text, isSsml);
     }
 
+    /** Returns IPA phonemes for the given text using the currently selected voice. */
+    public String textToPhonemesIPA(String text) {
+        return nativeTextToPhonemesIPA(text);
+    }
+
     public void stop() {
         nativeStop();
     }
@@ -328,6 +338,8 @@ public class SpeechSynthesis {
     private native final boolean nativeSynthesize(String text, boolean isSsml);
 
     private native final boolean nativeStop();
+
+    private native final String nativeTextToPhonemesIPA(String text);
 
     public interface SynthReadyCallback {
         void onSynthDataReady(byte[] audioData);
