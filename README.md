@@ -1,3 +1,11 @@
+VALENCIÀ
+
+eSpeak NG Text-to-Speech + [Projecte AINA](https://politiquesdigitals.gencat.cat/ca/economia/catalonia-ai/aina) = MATXA TTS
+
+És un projecte personal sorgit de la necessitat de poder parlar en la meua llengua materna el Valencià. Com que no podia perquè estava operat de la boca vaig fer servir la IA Claude per a que em creara una app per a poder comunicar-me. Claude ha utilitzat el proyecte eSpeak y el Projecte AINA per a poder fer aquesta app. Es tracta d'una app feta per a la tauleta Xiaomi 6s pro 12.4 en Hyper OS 3.0.302.0. Desconec si funciona en més dispositius. La app té un apartat per a afegir botons amb frases ràpides y després un espai on poder escriure el que vols. Baix d'eixe espai pots seleccionar a Lluc (veu masculina) o Gina (veu femenina) del projecte AINA, amb la varietat valenciana. Finalment, tenim el boto reproduir que serveix per a reproduir el que vols que es transcriga a veu.
+
+<img width="3048" height="2032" alt="Screenshot_2026-09-24-00-57-34-948_com reecedunn espeak" src="https://github.com/user-attachments/assets/bf4cc0d7-5886-4f09-a761-84de1f301eed" />
+
 # eSpeak NG Text-to-Speech
 
 - [Features](#features)
