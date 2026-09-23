@@ -5,7 +5,64 @@ eSpeak NG Text-to-Speech + [Projecte AINA](https://politiquesdigitals.gencat.cat
 És un projecte personal sorgit de la necessitat de poder parlar en la meua llengua materna el Valencià. Com que no podia perquè estava operat de la boca vaig fer servir la IA Claude per a que em creara una app per a poder comunicar-me. Claude ha utilitzat el proyecte eSpeak y el Projecte AINA per a poder fer aquesta app. Es tracta d'una app feta per a la tauleta Xiaomi 6s pro 12.4 en Hyper OS 3.0.302.0. Desconec si funciona en més dispositius. La app té un apartat per a afegir botons amb frases ràpides y després un espai on poder escriure el que vols. Baix d'eixe espai pots seleccionar a Lluc (veu masculina) o Gina (veu femenina) del projecte AINA, amb la varietat valenciana. Finalment, tenim el boto reproduir que serveix per a reproduir el que vols que es transcriga a veu.
 
 <img width="3048" height="2032" alt="Screenshot_2026-09-24-00-57-34-948_com reecedunn espeak" src="https://github.com/user-attachments/assets/bf4cc0d7-5886-4f09-a761-84de1f301eed" />
+# eSpeak NG Text-to-Speech
 
+* [Característiques](#features)
+* [Idiomes compatibles](docs/languages.md)
+* [Documentació](#documentation)
+* [Compatibilitat amb eSpeak](#espeak-compatibility)
+* [Història](#history)
+* [Informació sobre la llicència](#license-information)
+
+---
+
+eSpeak NG és un sintetitzador de veu de codi obert, compacte i lleuger, disponible per a Linux, Windows, Android i altres sistemes operatius. És compatible amb [més de 100 idiomes i accents](docs/languages.md) i està basat en el motor eSpeak creat per Jonathan Duddington.
+
+eSpeak NG utilitza un mètode de «síntesi per formants». Això permet oferir una gran quantitat d’idiomes ocupant molt poc d’espai. La veu és clara i es pot utilitzar a velocitats elevades, encara que no resulta tan natural ni suau com la d’altres sintetitzadors més grans basats en enregistraments de veu humana. També és compatible amb la síntesi per formants Klatt i permet utilitzar MBROLA com a motor de síntesi de veu backend.
+
+eSpeak NG està disponible com a:
+
+* Un programa de [línia d’ordes](src/espeak-ng.1.ronn) per a Linux i Windows que permet reproduir com a veu el text procedent d’un fitxer o de l’entrada estàndard (`stdin`).
+* Una versió com a [biblioteca compartida](docs/integration.md) perquè puga ser utilitzada per altres programes. En Windows és una DLL.
+* Una versió SAPI5 per a Windows, que permet utilitzar-lo amb lectors de pantalla i altres programes compatibles amb la interfície SAPI5 de Windows.
+* eSpeak NG també ha sigut portat a altres plataformes, entre elles Solaris i Mac OSX.
+
+## Característiques
+
+* Inclou diferents veus, les característiques de les quals es poden modificar.
+* Pot generar l’eixida de veu com un fitxer WAV.
+* És compatible amb SSML (Speech Synthesis Markup Language), encara que de manera incompleta, i també amb HTML.
+* Té una mida molt reduïda. El programa i les seues dades, incloent-hi nombrosos idiomes, ocupen només uns pocs MB.
+* Es pot utilitzar com a front-end per a les [veus de difonema MBROLA](docs/mbrola.md). eSpeak NG converteix el text en fonemes amb informació sobre el to i la duració.
+* Pot traduir text a codis de fonemes, de manera que es pot adaptar com a front-end per a altres motors de síntesi de veu.
+* Té potencial per a incorporar altres idiomes. Alguns ja estan inclosos en diferents fases de desenvolupament. L’ajuda de parlants nadius per a estos o altres idiomes és benvinguda.
+* Està escrit en C.
+
+Consulta el [ChangeLog](ChangeLog.md) per a veure una descripció dels canvis introduïts en les diferents versions i en el projecte eSpeak NG.
+
+Les plataformes següents són compatibles:
+
+| Plataforma | Versió mínima | Estat                                                                            |
+| ---------- | ------------- | -------------------------------------------------------------------------------- |
+| Linux      |               | ![CI](https://github.com/espeak-ng/espeak-ng/actions/workflows/ci.yml/badge.svg) |
+| BSD        |               |                                                                                  |
+| Android    | 4.0           |                                                                                  |
+| Windows    | Windows 8     |                                                                                  |
+| Mac        |               |                                                                                  |
+
+## Documentació
+
+1. La [guia d’usuari](docs/guide.md) explica com configurar i utilitzar eSpeak NG des de la línia d’ordes o com a biblioteca.
+2. La [guia de compilació](docs/building.md) proporciona informació sobre com compilar i construir eSpeak NG a partir del codi font.
+3. L’[índex](docs/index.md) proporciona una llista completa amb informació més detallada per a col·laboradors i desenvolupadors.
+4. Consulta la [guia de contribució](docs/contributing.md) per a començar a col·laborar amb el projecte.
+5. Consulta el [full de ruta d’eSpeak NG](https://github.com/espeak-ng/espeak-ng/wiki/eSpeak-NG-roadmap) per a participar en el desenvolupament d’eSpeak NG.
+
+## Compatibilitat amb eSpeak
+
+Els binaris d’*espeak-ng* utilitzen les mateixes opcions de línia d’ordes que *espeak*, juntament amb diverses opcions addicionals que incorporen noves funcionalitats pròpies d’*espeak-ng*, com ara la possibilitat d’especificar el nom del dispositiu d’eixida d’àudio que s’ha d’
+
+ENGLISH
 # eSpeak NG Text-to-Speech
 
 - [Features](#features)
