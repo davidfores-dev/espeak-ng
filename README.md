@@ -60,7 +60,47 @@ Les plataformes següents són compatibles:
 
 ## Compatibilitat amb eSpeak
 
-Els binaris d’*espeak-ng* utilitzen les mateixes opcions de línia d’ordes que *espeak*, juntament amb diverses opcions addicionals que incorporen noves funcionalitats pròpies d’*espeak-ng*, com ara la possibilitat d’especificar el nom del dispositiu d’eixida d’àudio que s’ha d’
+Els binaris d’*espeak-ng* utilitzen les mateixes opcions de línia d’ordes que *espeak*, juntament amb diverses opcions addicionals que incorporen noves funcionalitats pròpies d’*espeak-ng*, com ara la possibilitat d’especificar el nom del dispositiu d’eixida d’àudio que s’ha d’utilitzar. El procés de compilació crea enllaços simbòlics d’`espeak` cap a `espeak-ng` i de `speak` cap a `speak-ng`.
+
+El fitxer de capçalera `speak_lib.h` d’espeak es troba en `espeak-ng/speak_lib.h`, amb un enllaç simbòlic opcional en `espeak/speak_lib.h`. Este fitxer conté l’API d’espeak 1.48.15, amb un canvi en la macro `ESPEAK_API` per a solucionar problemes de compilació en Windows i alguns canvis menors en els comentaris de la documentació. Esta API en C és compatible a nivell d’API i ABI amb espeak.
+
+Les dades d’`espeak-data` s’han traslladat a `espeak-ng-data` per a evitar conflictes amb espeak. S’han introduït diversos canvis en els fitxers de veus, diccionaris i fonemes que fan que siguen incompatibles amb espeak.
+
+El projecte *espeak-ng* no inclou el programa *espeakedit*. La lògica necessària per a generar els fitxers binaris de diccionaris, fonemes i entonació s’ha traslladat al fitxer `libespeak-ng.so`, al qual es pot accedir des de la línia d’ordes d’`espeak-ng` i des de l’API en C.
+
+## Història
+
+El programa es coneixia originalment com a **speak** i va ser creat inicialment per Jonathan Duddington per als ordinadors Acorn/RISC_OS a partir de 1995. Posteriorment es va ampliar i reescriure en 2007 amb el nom d’**eSpeak**, relaxant les limitacions originals de memòria i potència de processament i incorporant compatibilitat amb més idiomes.
+
+En 2010, Reece H. Dunn va començar a mantindre una versió d’eSpeak en GitHub dissenyada per a facilitar la compilació d’eSpeak en sistemes POSIX, i en 2012 va portar el sistema de compilació a autotools. A finals de 2015, este projecte es va bifurcar oficialment per a crear el nou projecte **eSpeak NG**.
+
+El nou projecte eSpeak NG representa una evolució important respecte al projecte eSpeak original, amb l’objectiu de netejar i millorar la base de codi existent, afegir noves funcionalitats i ampliar i millorar els idiomes compatibles.
+
+La branca *historical* conté les versions antigues disponibles de l’eSpeak original que no estan incloses en el repositori Subversion.
+
+La versió 1.24.02 és la primera versió d’eSpeak que apareix en el repositori Subversion, encara que les versions des de la 1.05 fins a la 1.24 estan disponibles en:
+
+http://sourceforge.net/projects/espeak/files/espeak/
+
+Estes primeres versions s’han incorporat a la branca *historical*, amb la versió 1.24.02 com a última entrada. Això permet utilitzar la funcionalitat `replace` de Git per a consultar l’historial anterior:
+
+```
+git replace 8d59235f 63c1c019
+```
+
+**NOTA:** Les versions del codi font contenen les carpetes `big_endian`, `espeak-edit`, `praat-mod`, `riskos`, `windows_dll` i `windows_sapi`. Estes carpetes no apareixen en el repositori de codi font fins a versions posteriors, per la qual cosa s’han exclòs dels commits històrics per a ajustar-los millor al commit del codi font de la versió 1.24.02.
+
+## Informació sobre la llicència
+
+eSpeak NG Text-to-Speech es distribueix sota la llicència [GPL versió 3](COPYING) o posterior.
+
+La implementació de compatibilitat `getopt.c` per a oferir suport de `getopt` en Windows procedeix de la implementació `getopt_long` de NetBSD, distribuïda sota una llicència [BSD de 2 clàusules](COPYING.BSD2).
+
+Android és una marca comercial de Google LLC.
+
+## Agraïments
+
+L’extensió per al català va ser finançada pel [Departament de la Vicepresidència i de Polítiques Digitals i Territori de la Generalitat de Catalunya](https://politiquesdigitals.gencat.cat/ca/inici/index.html#googtrans%28ca|en%29) dins del marc del [Projecte AINA](https://politiquesdigitals.gencat.cat/ca/economia/catalonia-ai/aina).
 
 ENGLISH
 # eSpeak NG Text-to-Speech
